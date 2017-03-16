@@ -3,83 +3,113 @@
 namespace TheCodingMachine;
 
 use Interop\Container\ContainerInterface;
-use Interop\Container\Factories\Alias;
-use Interop\Container\Factories\Parameter;
-use Interop\Container\ServiceProvider;
+use Simplex\Container;
 use Twig_Environment;
-use Twig_LoaderInterface;
 use Twig_Loader_Chain;
 use Twig_Loader_Filesystem;
+use Twig_LoaderInterface;
 
-class TwigServiceProvider implements ServiceProvider
+class TwigServiceProvider
 {
-    const PACKAGE = 'thecodingmachine.twig-universal-module';
+    /**
+     * @var string
+     */
+    protected $twig_dir;
 
-    public function getServices()
+    /**
+     * @var string
+     */
+    protected $cache_dir;
+
+    /**
+     * @var bool
+     */
+    protected $debug;
+
+    /**
+     * @param string      $twig_dir  absolute path to the Twig templates-directory
+     * @param string|null $cache_dir absolute path to the Twig cache-directory (or NULL to use a system temp dir)
+     * @param bool        $debug     TRUE to bootstrap Twig in debug-mode
+     */
+    public function __construct(string $twig_dir, string $cache_dir = null, bool $debug = true)
     {
-        return [
-            Twig_Environment::class => [self::class,'createTwigEnvironment'],
-            Twig_LoaderInterface::class => new Alias(Twig_Loader_Chain::class),
-            Twig_Loader_Chain::class => [self::class,'createLoaderChain'],
-            'twig_options' => [self::class,'createOptions'],
-            'twig_loaders' => [self::class,'createLoadersArray'],
-            Twig_Loader_Filesystem::class => [self::class,'createTwigLoaderFilesystem'],
-            'twig_directory' => new Parameter(dirname(__DIR__, 4)),
-            'twig_cache_directory' => [self::class,'createTwigCacheDirectory'],
-        ];
+        $this->twig_dir = $twig_dir;
+        $this->cache_dir = $cache_dir ?: $this->createDefaultCacheDir();
+        $this->debug = $debug;
     }
 
     /**
-     * Returns the entry named PACKAGE.$name, of simply $name if PACKAGE.$name is not found.
-     *
-     * @param ContainerInterface $container
-     * @param string             $name
-     *
-     * @return mixed
+     * @param Container $container Simplex Container instance to bootstrap
      */
-    private static function get(ContainerInterface $container, string $name, $default = null)
+    public function bootstrap(Container $container)
     {
-        $namespacedName = self::PACKAGE.'.'.$name;
+        $container[Twig_Environment::class] = function(ContainerInterface $container) {
+            return $this->createTwigEnvironment($container);
+        };
 
-        return $container->has($namespacedName) ? $container->get($namespacedName) : ($container->has($name) ? $container->get($name) : $default);
+        $container[Twig_LoaderInterface::class] = function (ContainerInterface $container) {
+            return $container->get(Twig_Loader_Chain::class);
+        };
+
+        $container[Twig_Loader_Chain::class] = function(ContainerInterface $container) {
+            return $this->createLoaderChain($container);
+        };
+
+        $container['twig_options'] = function (ContainerInterface $container) {
+            return $this->createOptions($container);
+        };
+
+        $container['twig_loaders'] = function (ContainerInterface $container) {
+            return $this->createLoadersArray($container);
+        };
+
+        $container[Twig_Loader_Filesystem::class] = function (ContainerInterface $container) {
+            return $this->createTwigLoaderFilesystem($container);
+        };
+
+        $container['twig_directory'] = $this->twig_dir;
+
+        $container['twig_cache_directory'] = $this->cache_dir;
+
+        $container['twig_extensions'] = [];
     }
 
-    public static function createTwigEnvironment(ContainerInterface $container) : Twig_Environment
+    protected function createTwigEnvironment(ContainerInterface $container) : Twig_Environment
     {
-        $environment = new Twig_Environment($container->get(\Twig_LoaderInterface::class), self::get($container, 'twig_options', []));
-        $environment->setExtensions(self::get($container, 'twig_extensions', []));
+        $environment = new Twig_Environment($container->get(\Twig_LoaderInterface::class), $container->get('twig_options'));
+
+        $environment->setExtensions($container->get('twig_extensions'));
 
         return $environment;
     }
 
-    public static function createOptions(ContainerInterface $container) : array
+    protected function createOptions(ContainerInterface $container) : array
     {
-        // By default, we look at the DEBUG constant in the container. If not found, we are in DEBUG.
         return [
-            'debug' => self::get($container, 'DEBUG', true),
+            'debug'       => $this->debug,
             'auto_reload' => true,
-            'cache' => self::get($container, 'twig_cache_directory'),
+            'cache'       => $this->cache_dir,
         ];
     }
 
-    public static function createLoaderChain(ContainerInterface $container) : Twig_Loader_Chain
+    protected function createLoaderChain(ContainerInterface $container) : Twig_Loader_Chain
     {
-        return new Twig_Loader_Chain(self::get($container, 'twig_loaders', []));
+        return new Twig_Loader_Chain($container->get('twig_loaders'));
     }
 
-    public static function createLoadersArray(ContainerInterface $container) : array
+    protected function createLoadersArray(ContainerInterface $container) : array
     {
         return [
             $container->get(Twig_Loader_Filesystem::class),
         ];
     }
 
-    public static function createTwigLoaderFilesystem(ContainerInterface $container) : Twig_Loader_Filesystem
+    protected function createTwigLoaderFilesystem(ContainerInterface $container) : Twig_Loader_Filesystem
     {
-        return new Twig_Loader_Filesystem(self::get($container, 'twig_directory'));
+        return new Twig_Loader_Filesystem($container->get('twig_directory'));
     }
 
-    public static function createTwigCacheDirectory() : string
+    protected function createDefaultCacheDir() : string
     {
         // If we are running on a Unix environment, let's prepend the cache with the user id of the PHP process.
         // This way, we can avoid rights conflicts.

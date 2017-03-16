@@ -3,19 +3,22 @@
 namespace TheCodingMachine;
 
 use Simplex\Container;
+use Twig_Environment;
 
 class TwigServiceProviderTest extends \PHPUnit_Framework_TestCase
 {
     public function testProvider()
     {
-        $simplex = new Container();
-        $simplex->register(new TwigServiceProvider());
+        $container = new Container();
 
-        $simplex['twig_directory'] = dirname(__DIR__);
+        $provider = new TwigServiceProvider(__DIR__ . DIRECTORY_SEPARATOR . "Fixtures");
 
-        $twig = $simplex->get(\Twig_Environment::class);
+        $provider->bootstrap($container);
 
-        $result = $twig->render('tests/Fixtures/test.twig', ['name' => 'David']);
+        $twig = $container->get(Twig_Environment::class);
+
+        $result = $twig->render('test.twig', ['name' => 'David']);
+
         $this->assertEquals('Hello David', $result);
     }
 }

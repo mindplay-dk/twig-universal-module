@@ -14,11 +14,8 @@
     "packages": {
         "container-interop/container-interop": {
             "install-path": "vendor/container-interop/container-interop",
-            "installer": "composer"
-        },
-        "container-interop/service-provider": {
-            "install-path": "vendor/container-interop/service-provider",
-            "installer": "composer"
+            "installer": "composer",
+            "env": "dev"
         },
         "doctrine/instantiator": {
             "install-path": "vendor/doctrine/instantiator",
@@ -34,6 +31,10 @@
             "install-path": "vendor/justinrainbow/json-schema",
             "installer": "composer",
             "env": "dev"
+        },
+        "mindplay/provider-interop": {
+            "install-path": "vendor/mindplay/provider-interop",
+            "installer": "composer"
         },
         "mnapoli/simplex": {
             "install-path": "vendor/mnapoli/simplex",
@@ -60,8 +61,18 @@
             "installer": "composer",
             "env": "dev"
         },
+        "phpdocumentor/reflection-common": {
+            "install-path": "vendor/phpdocumentor/reflection-common",
+            "installer": "composer",
+            "env": "dev"
+        },
         "phpdocumentor/reflection-docblock": {
             "install-path": "vendor/phpdocumentor/reflection-docblock",
+            "installer": "composer",
+            "env": "dev"
+        },
+        "phpdocumentor/type-resolver": {
+            "install-path": "vendor/phpdocumentor/type-resolver",
             "installer": "composer",
             "env": "dev"
         },
@@ -102,6 +113,11 @@
         },
         "phpunit/phpunit-mock-objects": {
             "install-path": "vendor/phpunit/phpunit-mock-objects",
+            "installer": "composer",
+            "env": "dev"
+        },
+        "psr/container": {
+            "install-path": "vendor/psr/container",
             "installer": "composer",
             "env": "dev"
         },
@@ -215,6 +231,11 @@
             "installer": "composer",
             "env": "dev"
         },
+        "symfony/debug": {
+            "install-path": "vendor/symfony/debug",
+            "installer": "composer",
+            "env": "dev"
+        },
         "symfony/event-dispatcher": {
             "install-path": "vendor/symfony/event-dispatcher",
             "installer": "composer",
@@ -244,10 +265,6 @@
             "install-path": "vendor/symfony/yaml",
             "installer": "composer",
             "env": "dev"
-        },
-        "thecodingmachine/common-factories": {
-            "install-path": "vendor/thecodingmachine/common-factories",
-            "installer": "composer"
         },
         "twig/twig": {
             "install-path": "vendor/twig/twig",
